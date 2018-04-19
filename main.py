@@ -13,15 +13,17 @@ def get_time(comment):
 
 
 def main():
-	if len(sys.argv) != 2:
-		print("usage: python main.py <video_id>")
+	if len(sys.argv) not in [2, 3]:
+		print("usage: python main.py <video_id> <outfile_name>")
 		print("    where <video_id> is a twitch VOD video id")
+		print("          <outfile_name> is optional output filename (default filename is video_id)")
 		sys.exit(1)
 
 	with open("config.json") as f:
 		config = json.load(f)
 
 	video_id = sys.argv[1]
+	outfile_name = sys.argv[-1]
 	base_url = "https://api.twitch.tv/v5/videos/%s/comments?" % (video_id)
 	headers = {
 		"Client-ID": config["client-id"]
@@ -37,17 +39,17 @@ def main():
 
 	comments = comments.json()
 	while ("_next" in comments):
-		c.append(comments["comments"])
+		c.extend(comments["comments"])
 		for comment in comments["comments"]:
 			print(get_time(comment))
 		comments = requests.get(base_url+"cursor="+comments["_next"], headers=headers).json()
 		sleep(0.2)
 
-	c.append(comments["comments"])
+	c.extend(comments["comments"])
 	for comment in comments["comments"]:
 		print(get_time(comment))
 
-	with open(config["outdir"]+os.sep+video_id+".json", "w") as f:
+	with open(config["outdir"]+os.sep+outfile_name+".json", "w") as f:
 		json.dump(c, f, indent=1)
 
 if __name__ == "__main__":
